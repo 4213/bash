@@ -1,0 +1,74 @@
+How To INstall PPTP VPN : 
+
+Note : in some VPS Host, there are no Feature of Enabled TUN/TAP and PPP, but dont worry, you can try send ticket to your host, to request for enabling TUN/TAP and PPP for VPN Purpose, there will process your ticket and enabled it, i have experienced that matter in interserver.net. In some VPS Server, maybe it take about at least 1 Hours till your ticket processed but sometimes it takes only 5 minutes or less, depend how busy your customer service of your VPS Host.
+Ok, after TUN/TAP and PPP enabled, open PuTTY and check by type
+cat /dev/net/tun
+if the result is cat: /dev/net/tun: File descriptor in bad state, it means TUN/TAP is enabled
+
+ type
+cat /dev/ppp
+if the result is cat: /dev/ppp: No such device or address,  it means PPP is enabled
+
+Now, you are ready installing PPTP VPN, just code below, and it will do all what your server need.
+
+wget https://raw.githubusercontent.com/zaq111/bash/master/angelimus-install-pptpd-VPN.sh 
+chmod +x angelimus-install-pptpd-VPN.sh && ./angelimus-install-pptpd-VPN.sh
+
+While installing, you will be prompt 2 times, just answer with "y"
+
+Until this step, you're done Installing PPTP VPN on your Centos 6, Now, time to check if your VPN Works, i test my VPN using Windows OS,
+1. Go to Control Panel > Network and Sharing Center
+2. Click on Set up a new connection or network
+3. Click on Connect to a workplace
+4. Click on Use my Internet Connection (VPN)
+5. See dialog box
+Internet address = (your given ip when finish installing your VPN or usually your VPS IP)
+Destination Name = Choose whatever you like eg : My Personal VPN
+6. Click Next
+Username = angelimusVPN01
+Password = pass001
+7. Click Next and Wait until you see you are connected.
+8. Done, try open browser and goto myipaddress.com
+
+NOTE : (Ignore this when you can browse the internet using VPN)
+Why i can't connect to Internet using VPN,
+In some VPS Host, using this tutorial will works fine, BUT now i using my VPS from Evoburst.com, and why i use evoburst? because i know the VPN will Connect Smoothly, BUT WITH NO INTERNET ACCESS don't worry, i'll show how to.
+1. Open PuTTY and Check your network interface
+ifconfig eth0
+it will return 
+eth0: error fetching interface information: Device not found
+this is the problem since in my auto install script, i use :
+iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+
+that is means to add rule for eth0, because common VPS Host use eth0,
+if we see from ifconfig eth0 there is no device found, so what is my device? type
+ifconfig -s
+
+see, there are only : 
+lo (loopback)
+ppp (point to point protocol)
+venet0 (virtual ethernet network, i'm guessing it :P) which is act as phisycal adapter
+
+now, we found the device, which is venet0
+so, dont take it to long, just type 
+iptables -t nat -A POSTROUTING -o venet0 -j MASQUERADE
+service iptables save
+service iptables restart
+Now try to connect again your VPN, i hope it works. (if you experience another error, post it on comment section, maybe i can help to find out.)
+
+Part 2 - Add or Remove VPN user
+
+This part is very simple, just add this code (edit chap-secret)
+vi /etc/ppp/chap-secrets
+
+
+to edit this file, press insert
+
+to Remove User angelimusVPN01, just delete that line until *
+to Add User, type
+<VPN Username> <pptpd> <VPN Password> <*>
+eg: VPN001 pptpd Pass001 *
+It means, VPN001 is the username, pptpd is the type of VPN, Pass001 is the password, * is wildcard for all ip address.
+saving the file press ESC on keyboard, then type :wq
+
+All Done, hope you can install VPN on your VPS without trouble, if you have reference about VPS, you can post it on comment section.
